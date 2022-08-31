@@ -6,6 +6,7 @@ using System.Reflection;
 using System.IO;
 using System.Diagnostics;
 using System.Threading;
+using System.Data.SqlClient;
 
 namespace OWASP.WebGoat.NET.App_Code.DB
 {
@@ -407,22 +408,29 @@ namespace OWASP.WebGoat.NET.App_Code.DB
 
         public DataSet GetProductDetails(string productCode)
         {
-            string sql = string.Empty;
             SqliteDataAdapter da;
             DataSet ds = new DataSet();
 
-
             using (SqliteConnection connection = new SqliteConnection(_connectionString))
             {
+                var sql = "select * from Products where productCode = @productCode";
+                var command = new SqliteCommand(sql, connection);
+                command.Parameters.AddWithValue("productCode", productCode);
+
                 connection.Open();
-
-                sql = "select * from Products where productCode = '" + productCode + "'";
-                da = new SqliteDataAdapter(sql, connection);
+                da = new SqliteDataAdapter(command.CommandText, connection);
                 da.Fill(ds, "products");
+                connection.Close();
 
-                sql = "select * from Comments where productCode = '" + productCode + "'";
-                da = new SqliteDataAdapter(sql, connection);
+
+                sql = "select * from Comments where productCode = @productCode";
+                command = new SqliteCommand(sql, connection);
+                command.Parameters.AddWithValue("productCode", productCode);
+
+                connection.Open();
+                da = new SqliteDataAdapter(command.CommandText, connection);
                 da.Fill(ds, "comments");
+                connection.Close();
 
                 DataRelation dr = new DataRelation("prod_comments",
                 ds.Tables["products"].Columns["productCode"], //category table
